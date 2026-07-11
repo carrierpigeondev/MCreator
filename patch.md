@@ -183,4 +183,4 @@ Furthermore, I did the bare minimum to get my setup of Fedora working - I have *
 
 Therefore, there could be something wrong / incomplete by using the `CefResourceHandlerAdapter` implementation of the three new methods in `CefClassLoaderSchemeHandler` of which I am simply unaware.
 
-I am unsure of the benefits of updating MCreator universally to a newer JCEF
+At any rate, this fixed my issue :P
