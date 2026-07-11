@@ -65,7 +65,7 @@ seems like it could have breaking changes across MCreator as a result, doing it 
 
 Despite that, I managed to fix the issue I aimed to solve.
 
-I noticed a few other users were having issues with loading MCreator on Fedora based systems, all seeming to be related to a JCEF failure to initialize.
+I noticed a few other users were having issues with loading MCreator on Fedora based systems, all seeming to be related to a JCEF failure to initialize, affecting procedure rendering.
 
 Specifically, starting MCreator gives the following log, which I reproduced on my Fedora 44 x86_64 machine using the latest version of MCreator on the website (2026.2):
 
@@ -120,6 +120,10 @@ Runtime, however, when I tried to open a procedure:
 026-07-11-01:02:27 [WebView-Callback-Thread/WARN] [net.mcreator.ui.chromium.WebView] JS execution timed out after 10 seconds
 2026-07-11-01:02:27 [Thread-2755/ERROR] [CEF] Uncaught ReferenceError: Blockly is not defined (source: http://mcreator/blockly/blockly.html, line: 3)
 ```
+```java
+	@Override public boolean open(CefRequest request, BoolRef handleRequest, CefCallback callback) {
+		handleRequest.set(false);
+		return false;
 
 Confused, I tried to recompile and:
 
@@ -136,9 +140,9 @@ Confused, I tried to recompile and:
 There was a missing method. I checked in IntelliJ IDEA and it also warned me about two other methods. In all it told me to implement:
 
 ```java
-skip(l: long, longRef: LongRef, cefResourceSkipCallback: CefResourceSkipCallback): boolean
 open(cefRequest: CefRequest, boolRef: BoolRef, cefCallback: cefCallback): boolean
 read(bytes: byte[], i: int, intRef: IntRef, cefResourceReadCallback: CefResourceReadCallback): boolean
+skip(l: long, longRef: LongRef, cefResourceSkipCallback: CefResourceSkipCallback): boolean
 ```
 
 I started by going to the `CefResourceHandler` class which is implemented by `CefClassLoaderSchemeHandler`, and saw that the three methods had implementations inside of `CefResourceHandlerAdapter`
@@ -165,3 +169,18 @@ I ctrl-c ctrl-v'd those methods as overrides into `CefClassLoaderSchemeHandler` 
 
 Compiled and ran MCreator and the Blockly UI appears (i.e., the side bar shows up and procedures actually render) :D
 
+# Why "half-baked"?
+
+Simply because I do not know the ramifications of this change to other parts of the program that use JCEF, such as those that can
+
+1) fail silently
+
+or
+
+2) fail loudly, but I haven't triggered the path that would cause it yet.
+
+Furthermore, I did the bare minimum to get my setup of Fedora working - I have **no clue why it didn't / doesn't work on Fedora in the first place.**
+
+Therefore, there could be something wrong / incomplete by using the `CefResourceHandlerAdapter` implementation of the three new methods in `CefClassLoaderSchemeHandler` of which I am simply unaware.
+
+I am unsure of the benefits of updating MCreator universally to a newer JCEF
