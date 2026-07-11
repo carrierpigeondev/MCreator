@@ -27,8 +27,12 @@ import org.apache.logging.log4j.Logger;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
 import org.cef.callback.CefCallback;
+import org.cef.callback.CefResourceReadCallback;
+import org.cef.callback.CefResourceSkipCallback;
 import org.cef.handler.CefResourceHandler;
+import org.cef.misc.BoolRef;
 import org.cef.misc.IntRef;
+import org.cef.misc.LongRef;
 import org.cef.misc.StringRef;
 import org.cef.network.CefRequest;
 import org.cef.network.CefResponse;
@@ -86,6 +90,11 @@ class CefClassLoaderSchemeHandler implements CefResourceHandler {
 		return true;
 	}
 
+	@Override public boolean open(CefRequest request, BoolRef handleRequest, CefCallback callback) {
+		handleRequest.set(false);
+		return false;
+	}
+
 	@Override public void getResponseHeaders(CefResponse response, IntRef responseLength, StringRef redirectUrl) {
 		response.setMimeType(contentType);
 		response.setStatus(200);
@@ -106,6 +115,16 @@ class CefClassLoaderSchemeHandler implements CefResourceHandler {
 			closeStream();
 			return false;
 		}
+	}
+
+	@Override public boolean read(byte[] dataOut, int bytesToRead, IntRef bytesRead, CefResourceReadCallback callback) {
+		bytesRead.set(-1);
+		return false;
+	}
+
+	@Override public boolean skip(long bytesToSkip, LongRef bytesSkipped, CefResourceSkipCallback callback) {
+		bytesSkipped.set(-2L);
+		return false;
 	}
 
 	@Override public void cancel() {
