@@ -1,11 +1,69 @@
 # Patch Note
 
-I am not at all a Java developer. I have only now began to dip my toes into Java with MCreator modding once again. It's been a good couple years since I seriously used the program, and in that time
-I've been doing a little C#+Unity and Zig for game development. As a result, I apologize if some of the code in the patch is a bit rough :P
+TL;DR: Update Jetbrains Runtime with JCEF from b329.117 to *something* newer (I chose b508.16 because it is the newest as of this writeup) as it fixes incompatibility with the Fedora Linux distro.
+
+```diff
+- def jbr25_linux_64 = "jbrsdk_jcef-25.0.2-linux-x64-b329.117"
++ def jbr25_linux_64 = "jbrsdk_jcef-25.0.3-linux-x64-b508.16"
+```
+
+Applied to `/platform/setup.gradle`.
+
+```diff
+  import org.cef.browser.CefBrowser;
+  import org.cef.browser.CefFrame;
+  import org.cef.callback.CefCallback;
++ import org.cef.callback.CefResourceReadCallback;
++ import org.cef.callback.CefResourceSkipCallback;
+  import org.cef.handler.CefResourceHandler;
++ import org.cef.misc.BoolRef;
+  import org.cef.misc.IntRef;
++ import org.cef.misc.LongRef;
+  import org.cef.misc.StringRef;
+  import org.cef.network.CefRequest;
+  import org.cef.network.CefResponse;
+
+  @@ -86,6 +90,11 @@ public CefClassLoaderSchemeHandler(CefBrowser browser, CefFrame frame, String sc
+		return true;
+	}
+
++	@Override public boolean open(CefRequest request, BoolRef handleRequest, CefCallback callback) {
++		handleRequest.set(false);
++		return false;
++	}
++
+	@Override public void getResponseHeaders(CefResponse response, IntRef responseLength, StringRef redirectUrl) {
+		response.setMimeType(contentType);
+		response.setStatus(200);
+@@ -108,6 +117,16 @@ public CefClassLoaderSchemeHandler(CefBrowser browser, CefFrame frame, String sc
+		}
+	}
+
++	@Override public boolean read(byte[] dataOut, int bytesToRead, IntRef bytesRead, CefResourceReadCallback callback) {
++		bytesRead.set(-1);
++		return false;
++	}
++
++	@Override public boolean skip(long bytesToSkip, LongRef bytesSkipped, CefResourceSkipCallback callback) {
++		bytesSkipped.set(-2L);
++		return false;
++	}
++
+	@Override public void cancel() {
+		closeStream();
+	}
+```
+
+Applied to `/src/main/java/net/mcreator/ui/chromium/CefClassLoaderSchemeHandler.java`.
+
+
+# What is the issue?
+
+Howdy yall. I am not at all a Java developer. I have only now began to dip my toes into Java with MCreator modding once again. It's been a good couple years since I seriously used the program, and in
+that time I've been doing a little C#+Unity and Zig for game development. As a result, I did not attempt to fully implement everything as it probably should be implemented, given that the solution
+seems like it could have breaking changes across MCreator as a result, doing it properly is way out of my depth.
 
 Despite that, I managed to fix the issue I aimed to solve.
-
-# What is this
 
 I noticed a few other users were having issues with loading MCreator on Fedora based systems, all seeming to be related to a JCEF failure to initialize.
 
@@ -38,7 +96,7 @@ or was newly created), the Blockly UI would not render at all (neither the side 
 
 Let me preface this by saying **I have no clue what caused this to fail.**
 
-## The patch
+## What is the (half-baked) solution?
 
 First, I updated the Jetbrains Runtime with JCEF to the newest version to see if it might fix anything. It had JCEF in the name :shrug:
 
