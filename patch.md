@@ -120,10 +120,6 @@ Runtime, however, when I tried to open a procedure:
 026-07-11-01:02:27 [WebView-Callback-Thread/WARN] [net.mcreator.ui.chromium.WebView] JS execution timed out after 10 seconds
 2026-07-11-01:02:27 [Thread-2755/ERROR] [CEF] Uncaught ReferenceError: Blockly is not defined (source: http://mcreator/blockly/blockly.html, line: 3)
 ```
-```java
-	@Override public boolean open(CefRequest request, BoolRef handleRequest, CefCallback callback) {
-		handleRequest.set(false);
-		return false;
 
 Confused, I tried to recompile and:
 
